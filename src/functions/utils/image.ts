@@ -23,15 +23,23 @@ export function isInScopePng(resource: any): boolean {
 		return false
 	}
 
-	const format = String(resource.format ?? "").toLowerCase()
-	const resourceType = String(resource.resource_type ?? "").toLowerCase()
-	if (resourceType !== "image" || format !== "png") {
+	if (!isPngImageResource(resource)) {
 		return false
 	}
 
 	const publicId = String(resource.public_id ?? "")
 	const baseName = path.basename(publicId)
 	return baseName.startsWith("Picture_of")
+}
+
+export function isPngImageResource(resource: any): boolean {
+	if (!resource) {
+		return false
+	}
+
+	const format = String(resource.format ?? "").toLowerCase()
+	const resourceType = String(resource.resource_type ?? "").toLowerCase()
+	return resourceType === "image" && format === "png"
 }
 
 export function toAsset(resource: any): CloudinaryAsset {

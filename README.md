@@ -5,6 +5,7 @@ Durable Azure Function app for recompressing in-scope Cloudinary PNG assets whil
 ## Endpoints
 
 - `POST /api/start` starts the migration orchestration.
+- `POST /api/test-image-ids` starts a test orchestration for explicit Cloudinary public IDs.
 - `GET /api/status/{instanceId}` returns durable orchestration status and custom summary.
 
 Both endpoints use `authLevel: function`.
@@ -83,3 +84,24 @@ Optional body fields:
 - `pageSize`
 - `batchSize`
 - `delayBetweenBatchesSec`
+
+## Test Specific Image IDs
+
+```bash
+curl -X POST "http://localhost:7071/api/test-image-ids?code=<function-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image_ids": ["Picture_of_Manchester_UK_c045ad7bad"],
+    "dryRun": true
+  }'
+```
+
+Request body fields:
+
+- `image_ids` (required, non-empty string array)
+- `runId`
+- `dryRun`
+- `batchSize`
+- `delayBetweenBatchesSec`
+
+The test orchestration returns durable status URLs just like `POST /api/start`, and status payload includes `summary`, `missingIds`, and `nonPngIds` in custom status/output.

@@ -74,6 +74,32 @@ export type StartRequestBody = {
 	delayBetweenBatchesSec?: number
 }
 
+export type TestImageIdsRequestBody = {
+	image_ids?: string[]
+	dryRun?: boolean
+	runId?: string
+	batchSize?: number
+	delayBetweenBatchesSec?: number
+}
+
+export type FetchAssetsByIdsInput = {
+	imageIds: string[]
+}
+
+export type FetchAssetsByIdsResult = {
+	requestedCount: number
+	foundCount: number
+	missingIds: string[]
+	nonPngIds: string[]
+	assets: CloudinaryAsset[]
+}
+
+export type TestImageIdsOrchestratorState = {
+	runId: string
+	imageIds: string[]
+	config: MigrationRuntimeConfig
+}
+
 export type UpsertImageLedgerInput = {
 	publicId: string
 	partitionKey: string
@@ -82,6 +108,8 @@ export type UpsertImageLedgerInput = {
 }
 
 export const ORCHESTRATOR_NAME = "migrationOrchestrator"
+export const TEST_IMAGE_IDS_ORCHESTRATOR_NAME = "testImageIdsOrchestrator"
 export const FETCH_ASSET_PAGE_ACTIVITY = "fetchAssetPage"
+export const FETCH_ASSETS_BY_IDS_ACTIVITY = "fetchAssetsByIds"
 export const PROCESS_IMAGE_ACTIVITY = "processImage"
 export const UPSERT_IMAGE_LEDGER_ACTIVITY = "upsertImageLedger"

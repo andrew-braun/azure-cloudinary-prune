@@ -31,14 +31,21 @@ export function requireSetting(name: string): string {
 export async function parseStartBody(
 	request: HttpRequest,
 ): Promise<StartRequestBody> {
+	return parseJsonBody<StartRequestBody>(request, {})
+}
+
+export async function parseJsonBody<T>(
+	request: HttpRequest,
+	fallbackValue: T,
+): Promise<T> {
 	if (!request.headers.get("content-type")?.includes("application/json")) {
-		return {}
+		return fallbackValue
 	}
 
 	try {
-		return (await request.json()) as StartRequestBody
+		return (await request.json()) as T
 	} catch {
-		return {}
+		return fallbackValue
 	}
 }
 
