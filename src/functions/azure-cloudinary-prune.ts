@@ -23,7 +23,14 @@ import {
 	UPSERT_IMAGE_LEDGER_ACTIVITY,
 } from "./types/migration"
 import { chunkArray } from "./utils/arrays"
-import { getRuntimeConfig, parseStartBody, toPositiveInt } from "./utils/config"
+import {
+	getRuntimeConfig,
+	getStartMigrationLockReason,
+	isStartMigrationEnabled,
+	parseStartBody,
+	toPositiveInt,
+} from "./utils/config"
+import { get429CounterSnapshot } from "./utils/rate-limit-telemetry"
 import { emptySummary } from "./utils/summary"
 
 const migrationOrchestrator: OrchestrationHandler = function* (
@@ -142,6 +149,17 @@ const startMigration: HttpHandler = async (
 	request: HttpRequest,
 	context: InvocationContext,
 ): Promise<HttpResponseInit> => {
+	if (!isStartMigrationEnabled()) {
+		return {
+			status: 403,
+			jsonBody: {
+				error: "Migration start endpoint is disabled by configuration.",
+				reason:
+					getStartMigrationLockReason() ??
+					"Set START_MIGRATION_ENABLED=true to re-enable.",
+			},
+		}
+	}
 	const body = (await parseStartBody(request)) as StartRequestBody
 	const baseConfig = getRuntimeConfig()
 
@@ -212,6 +230,7 @@ const checkStatus: HttpHandler = async (
 		status: 200,
 		jsonBody: {
 			instanceId: status.instanceId,
+			rateLimit429: get429CounterSnapshot(),
 			runtimeStatus: status.runtimeStatus,
 			createdTime: status.createdTime,
 			lastUpdatedTime: status.lastUpdatedTime,

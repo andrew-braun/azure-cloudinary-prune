@@ -42,6 +42,19 @@ export async function parseStartBody(
 	}
 }
 
+export function isStartMigrationEnabled(): boolean {
+	return toBoolean(process.env.START_MIGRATION_ENABLED, true)
+}
+
+export function getStartMigrationLockReason(): string | undefined {
+	const value = process.env.START_MIGRATION_LOCK_REASON?.trim()
+	if (!value) {
+		return undefined
+	}
+
+	return value
+}
+
 export function toPositiveInt(input: unknown, defaultValue: number): number {
 	const parsed = Number(input)
 	if (!Number.isFinite(parsed) || parsed <= 0) {

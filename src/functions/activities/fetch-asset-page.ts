@@ -3,6 +3,7 @@ import { ActivityHandler } from "durable-functions"
 import { FetchAssetPageInput, FetchAssetPageResult } from "../types/migration"
 import { getCloudinaryClient } from "../utils/cloudinary"
 import { isInScopePng, toAsset } from "../utils/image"
+import { retryTransient } from "../utils/retry"
 
 export const fetchAssetPageActivity: ActivityHandler = async (
 	input: FetchAssetPageInput,
@@ -12,13 +13,25 @@ export const fetchAssetPageActivity: ActivityHandler = async (
 	const cloudinary = getCloudinaryClient()
 
 	const pageSize = Math.max(1, input?.pageSize ?? 500)
-	const response = await cloudinary.api.resources({
-		type: "upload",
-		resource_type: "image",
-		max_results: pageSize,
-		fields: "public_id,secure_url,bytes,format,resource_type",
-		...(input?.nextCursor ? { next_cursor: input.nextCursor } : {}),
-	})
+	const response = await retryTransient(
+		() =>
+			cloudinary.api.resources({
+				type: "upload",
+				resource_type: "image",
+				max_results: pageSize,
+				fields: "public_id,secure_url,bytes,format,resource_type",
+				...(input?.nextCursor ? { next_cursor: input.nextCursor } : {}),
+			}),
+		4,
+		{
+			rateLimitSource: "admin",
+			onRateLimited: (snapshot, _, attempt) => {
+				context.log(
+					`429 detected source=admin attempt=${attempt} total429=${snapshot.total429} recent429Last5Min=${snapshot.recent429Last5Min}`,
+				)
+			},
+		},
+	)
 
 	const resources = Array.isArray(response.resources) ? response.resources : []
 	const assets = resources.filter(isInScopePng).map(toAsset)

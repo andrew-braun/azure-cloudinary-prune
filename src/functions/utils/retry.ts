@@ -1,3 +1,9 @@
+import {
+	increment429Counter,
+	RateLimitCounterSnapshot,
+	RateLimitSource,
+} from "./rate-limit-telemetry"
+
 function parseRetryAfter(headerValue: string | null): number | undefined {
 	if (!headerValue) {
 		return undefined
@@ -16,8 +22,16 @@ function parseRetryAfter(headerValue: string | null): number | undefined {
 	return Math.max(0, dateValue - Date.now())
 }
 
+function getStatusCode(error: any): number {
+	return Number(error?.status ?? error?.statusCode ?? error?.http_code)
+}
+
+export function isRateLimited(error: any): boolean {
+	return getStatusCode(error) === 429
+}
+
 function isTransient(error: any): boolean {
-	const status = Number(error?.status ?? error?.statusCode ?? error?.http_code)
+	const status = getStatusCode(error)
 	if (status === 429 || status >= 500) {
 		return true
 	}
@@ -30,9 +44,19 @@ function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+export type RetryTransientOptions = {
+	rateLimitSource?: RateLimitSource
+	onRateLimited?: (
+		snapshot: RateLimitCounterSnapshot,
+		error: any,
+		attempt: number,
+	) => void
+}
+
 export async function retryTransient<T>(
 	operation: () => Promise<T>,
 	maxAttempts: number,
+	options?: RetryTransientOptions,
 ): Promise<T> {
 	let delayMs = 1000
 
@@ -40,6 +64,13 @@ export async function retryTransient<T>(
 		try {
 			return await operation()
 		} catch (error: any) {
+			if (isRateLimited(error)) {
+				const snapshot = increment429Counter(
+					options?.rateLimitSource ?? "unknown",
+				)
+				options?.onRateLimited?.(snapshot, error, attempt)
+			}
+
 			const isLastAttempt = attempt === maxAttempts
 			if (isLastAttempt || !isTransient(error)) {
 				throw error

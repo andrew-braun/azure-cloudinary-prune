@@ -55,6 +55,14 @@ export const processImageActivity: ActivityHandler = async (
 		const sourceBuffer = await retryTransient(
 			() => downloadImage(asset.secureUrl),
 			4,
+			{
+				rateLimitSource: "download",
+				onRateLimited: (snapshot, _, attempt) => {
+					context.log(
+						`429 detected source=download publicId=${publicId} attempt=${attempt} total429=${snapshot.total429} recent429Last5Min=${snapshot.recent429Last5Min}`,
+					)
+				},
+			},
 		)
 		const originalBytes = sourceBuffer.length
 		const checksum = sha256(sourceBuffer)
@@ -114,6 +122,14 @@ export const processImageActivity: ActivityHandler = async (
 			await retryTransient(
 				() => overwriteCloudinaryImage(publicId, compressedBuffer),
 				4,
+				{
+					rateLimitSource: "upload",
+					onRateLimited: (snapshot, _, attempt) => {
+						context.log(
+							`429 detected source=upload publicId=${publicId} attempt=${attempt} total429=${snapshot.total429} recent429Last5Min=${snapshot.recent429Last5Min}`,
+						)
+					},
+				},
 			)
 		}
 

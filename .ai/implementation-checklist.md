@@ -35,7 +35,7 @@ This checklist converts the finalized plan into an execution sequence you can tr
 - [x] Implement POST start endpoint.
 - [x] Implement GET status endpoint.
 - [x] Protect both endpoints for production (function key or Easy Auth).
-- [ ] Disable or restrict start endpoint after kickoff.
+- [x] Disable or restrict start endpoint after kickoff.
 
 ## E. Orchestrator Implementation
 
@@ -85,7 +85,7 @@ This checklist converts the finalized plan into an execution sequence you can tr
 - [x] Verify no hidden per-image Admin calls.
 - [x] Keep static pacing defaults initially.
 - [x] Add option to increase delay to 180s without code changes.
-- [ ] Log rate-limit events and 429 bursts.
+- [x] Log rate-limit events and 429 bursts.
 
 ## J. Observability and Operations
 

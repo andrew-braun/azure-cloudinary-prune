@@ -37,6 +37,27 @@ Both endpoints use `authLevel: function`.
 - `SKIP_RATIO_THRESHOLD` (default `0.9`)
 - `MIN_SAVINGS_RATIO` (default `0.1`)
 - `DRY_RUN` (`true` recommended for first execution)
+- `START_MIGRATION_ENABLED` (default `true`)
+- `START_MIGRATION_LOCK_REASON` (optional message returned when start is locked)
+
+## Start Endpoint Lock
+
+To disable new migration starts after kickoff:
+
+- Set `START_MIGRATION_ENABLED=false`
+- Optionally set `START_MIGRATION_LOCK_REASON` for operators
+
+`POST /api/start` returns `403` while locked.
+
+## 429 Counters
+
+The app keeps lightweight in-memory counters for HTTP 429 responses from:
+
+- Cloudinary Admin API page fetches
+- image download retries
+- Cloudinary upload retries
+
+`GET /api/status/{instanceId}` includes a `rateLimit429` snapshot with totals and recent 5-minute count.
 
 ## Local Development
 
